@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算命学 裏性格診断</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=Shippori+Mincho+B1:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --card: rgba(18, 18, 30, 0.85);
+    --accent: #ff3366;
+    --accent2: #7c3aed;
+    --accent3: #06d6a0;
+    --gold: #fbbf24;
+    --text: #e8e6f0;
+    --dim: #6b6888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 背景アニメーション */
+  .bg-orbs {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+  }
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
+    animation: float 12s ease-in-out infinite;
+  }
+  .orb:nth-child(1) { width: 400px; height: 400px; background: #7c3aed; top: -100px; left: -100px; animation-delay: 0s; }
+  .orb:nth-child(2) { width: 350px; height: 350px; background: #ff3366; bottom: -80px; right: -80px; animation-delay: -4s; }
+  .orb:nth-child(3) { width: 300px; height: 300px; background: #06d6a0; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -8s; }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -30px) scale(1.05); }
+    66% { transform: translate(-20px, 20px) scale(0.95); }
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 520px; margin: 0 auto; padding: 24px 16px;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  /* ===== TOP SCREEN ===== */
+  .screen { display: none; width: 100%; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  .logo-kanji {
+    font-family: 'Shippori Mincho B1', serif;
+    font-size: 72px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1; text-align: center;
+    animation: breathe 3s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
+  }
+
+  .logo-sub {
+    font-size: 14px; color: var(--dim); letter-spacing: 6px;
+    margin-top: 8px; text-transform: uppercase;
+  }
+
+  .tagline {
+    font-size: 15px; color: var(--dim); margin: 28px 0 40px;
+    text-align: center; line-height: 1.8;
+  }
+  .tagline em {
+    font-style: normal; color: var(--accent);
+  }
+
+  /* 入力フォーム */
+  .input-group {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 20px; width: 100%;
+    justify-content: center;
+  }
+  .input-group select {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text); padding: 14px 12px;
+    border-radius: 12px; font-size: 16px;
+    font-family: inherit; appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+  .input-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .input-group .sep {
+    color: var(--dim); font-size: 14px;
+  }
+
+  .btn-divine {
+    width: 100%; max-width: 320px;
+    padding: 18px; border: none; border-radius: 16px;
+    font-size: 18px; font-weight: 700; font-family: inherit;
+    cursor: pointer; position: relative;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-divine:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255, 51, 102, 0.4);
+  }
+  .btn-divine:active { transform: translateY(0); }
+  .btn-divine::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shimmer 3s infinite;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ===== LOADING SCREEN ===== */
+  .loading-text {
+    font-family: 'Shippori Mincho B1', serif;
+    font-size: 20px; text-align: center;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .bagua-spinner {
+    width: 120px; height: 120px; margin: 32px auto;
+    border: 3px solid transparent;
+    border-top-color: var(--accent);
+    border-right-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin 1.2s linear infinite;
+    position: relative;
+  }
+  .bagua-spinner::after {
+    content: '☯'; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 40px;
+    animation: spin-reverse 2.4s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin-reverse { to { transform: rotate(-360deg); } }
+
+  /* ===== RESULT SCREEN ===== */
+  .result-card {
+    width: 100%; border-radius: 24px;
+    background: var(--card);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+    animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    padding: 32px 24px 20px;
+    text-align: center;
+    position: relative;
+  }
+  .result-header::after {
+    content: ''; position: absolute; bottom: 0; left: 24px; right: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  }
+
+  .element-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px; border-radius: 99px;
+    font-size: 13px; font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .element-icon { font-size: 18px; }
+
+  .result-kan {
+    font-family: 'Shippori Mincho B1', serif;
+    font-size: 80px; font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .result-reading {
+    font-size: 14px; color: var(--dim); letter-spacing: 4px;
+  }
+
+  .result-body { padding: 24px; }
+
+  .ura-title-label {
+    font-size: 11px; color: var(--dim);
+    letter-spacing: 3px; margin-bottom: 6px;
+  }
+  .ura-title {
+    font-family: 'Shippori Mincho B1', serif;
+    font-size: 26px; font-weight: 800;
+    margin-bottom: 20px; line-height: 1.4;
+  }
+
+  .ura-desc {
+    font-size: 14px; line-height: 2; color: rgba(232, 230, 240, 0.85);
+    margin-bottom: 24px;
+  }
+
+  .stats-section { margin-bottom: 24px; }
+  .stats-title {
+    font-size: 12px; color: var(--dim); letter-spacing: 2px; margin-bottom: 12px;
+  }
+  .stat-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .stat-label { font-size: 13px; width: 80px; flex-shrink: 0; }
+  .stat-bar-bg {
+    flex: 1; height: 8px; border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  .stat-bar {
+    height: 100%; border-radius: 4px;
+    transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+  .stat-val {
+    font-size: 12px; color: var(--dim); width: 32px; text-align: right;
+  }
+
+  .ura-quote {
+    font-family: 'Shippori Mincho B1', serif;
+    font-size: 15px; font-style: italic;
+    text-align: center; padding: 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    color: var(--gold); line-height: 1.8;
+  }
+
+  .btn-retry {
+    width: 100%; max-width: 320px;
+    margin-top: 20px; padding: 16px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px; background: transparent;
+    color: var(--text); font-size: 15px;
+    font-family: inherit; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-retry:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  .credit {
+    margin-top: 24px; font-size: 11px; color: var(--dim);
+    text-align: center; letter-spacing: 1px;
+  }
+
+  /* 五行カラー */
+  .el-wood { --el-color: #22c55e; --el-bg: rgba(34,197,94,0.12); }
+  .el-fire { --el-color: #ef4444; --el-bg: rgba(239,68,68,0.12); }
+  .el-earth { --el-color: #f59e0b; --el-bg: rgba(245,158,11,0.12); }
+  .el-metal { --el-color: #a1a1aa; --el-bg: rgba(161,161,170,0.15); }
+  .el-water { --el-color: #3b82f6; --el-bg: rgba(59,130,246,0.12); }
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+</div>
+
+<div class="container">
+
+  <!-- ===== TOP ===== -->
+  <div class="screen active" id="top-screen">
+    <div class="logo-kanji">裏性格</div>
+    <div class="logo-sub">算命学診断</div>
+    <p class="tagline">
+      生年月日に刻まれた<em>本性</em>、<br>
+      暴かれる覚悟はありますか？
+    </p>
+
+    <div class="input-group">
+      <select id="sel-year"></select>
+      <span class="sep">年</span>
+      <select id="sel-month"></select>
+      <span class="sep">月</span>
+      <select id="sel-day"></select>
+      <span class="sep">日</span>
+    </div>
+
+    <button class="btn-divine" onclick="startDivine()">本性を暴く</button>
+    <p class="credit">※ 算命学の陰陽五行・十干をベースにしたエンタメ診断です</p>
+  </div>
+
+  <!-- ===== LOADING ===== -->
+  <div class="screen" id="loading-screen">
+    <div class="bagua-spinner"></div>
+    <p class="loading-text" id="loading-msg">命式を解読中…</p>
+  </div>
+
+  <!-- ===== RESULT ===== -->
+  <div class="screen" id="result-screen">
+    <div class="result-card" id="result-card"></div>
+    <button class="btn-retry" onclick="goBack()">もう一人占う</button>
+    <p class="credit">算命学 × 裏性格診断</p>
+  </div>
+
+</div>
+
+<script>
+// ===== セレクトボックス初期化 =====
+(() => {
+  const ySel = document.getElementById('sel-year');
+  const mSel = document.getElementById('sel-month');
+  const dSel = document.getElementById('sel-day');
+  for (let y = 2010; y >= 1940; y--) {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === 1990) o.selected = true;
+    ySel.appendChild(o);
+  }
+  for (let m = 1; m <= 12; m++) {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    mSel.appendChild(o);
+  }
+  for (let d = 1; d <= 31; d++) {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    dSel.appendChild(o);
+  }
+})();
+
+// ===== 日干（十干）計算 =====
+// 算命学では日柱の天干（日干）がその人の本質を表す
+// 六十干支の計算: 基準日からの日数差で求める
+function calcDayKan(year, month, day) {
+  // 基準日: 1900年1月1日 = 庚子（干の番号0=甲,1=乙,..., 庚=6）
+  // 1900-01-01 の日干は「庚」(index 6)
+  const baseDate = new Date(1900, 0, 1);
+  const targetDate = new Date(year, month - 1, day);
+  const diffDays = Math.floor((targetDate - baseDate) / (1000 * 60 * 60 * 24));
+  // 日干 = (基準日干 + 日数差) mod 10
+  let kanIndex = ((6 + diffDays) % 10 + 10) % 10;
+  return kanIndex;
+}
+
+// ===== 十干データ =====
+const kanData = [
+  { // 甲 (きのえ) - 木の陽
+    kan: '甲', reading: 'きのえ', element: '木', yinyang: '陽',
+    elClass: 'el-wood', emoji: '🌳',
+    nature: '大樹',
+    uraTitle: '頑固すぎる理想主義者',
+    uraDesc: '表向きはリーダーシップがあって頼りがいのある人。でも裏の顔は、自分の正義を曲げられない超頑固者。「俺が正しい」が口癖になってない？周りがもう折れてるのに気づかず、一人で突っ走りがち。飲み会でも気づけば説教モードに入ってる危険性大。でもその不器用なまっすぐさが、なんだかんだ周りに愛されてる。',
+    stats: { 頑固度: 92, 面倒見: 85, 自己中度: 68, 正義感: 95, 酔うと: 78 },
+    quote: '「正しいことを言ってるのに、なぜ伝わらないのか」が永遠の悩み',
+    statColors: ['#22c55e','#22c55e','#ef4444','#22c55e','#f59e0b']
+  },
+  { // 乙 (きのと) - 木の陰
+    kan: '乙', reading: 'きのと', element: '木', yinyang: '陰',
+    elClass: 'el-wood', emoji: '🌿',
+    nature: '草花',
+    uraTitle: '実は腹黒い生存戦略家',
+    uraDesc: 'しなやかで柔らかい雰囲気、でもその裏では驚くほど冷静に人間関係を計算してる。「争わない」んじゃなくて「争わずに勝つ」が信条。一見おとなしそうに見えて、実は集団の中で一番状況を把握してるのがあなた。飲み会では聞き上手のふりしながら全員の情報収集してるタイプ。',
+    stats: { 腹黒度: 88, 適応力: 95, 計算高さ: 82, 愛嬌: 90, 酔うと: 65 },
+    quote: '「柔よく剛を制す」を地でいく、草花の皮を被った策士',
+    statColors: ['#ef4444','#22c55e','#f59e0b','#22c55e','#3b82f6']
+  },
+  { // 丙 (ひのえ) - 火の陽
+    kan: '丙', reading: 'ひのえ', element: '火', yinyang: '陽',
+    elClass: 'el-fire', emoji: '☀️',
+    nature: '太陽',
+    uraTitle: '承認欲求モンスター',
+    uraDesc: '明るくて華やか、場のムードメーカー。でも裏の本性は「もっと見て！もっと褒めて！」が止まらない承認欲求の塊。自分が主役じゃないと機嫌が悪くなる。SNSのいいね数を密かにチェックしてるのバレてるよ？でもそのエネルギーで周りを照らしてるのも事実。太陽だから眩しすぎてたまに暑苦しい。',
+    stats: { 承認欲求: 98, カリスマ性: 88, 寂しがり: 85, 行動力: 92, 酔うと: 90 },
+    quote: '「俺がいないと盛り上がらないでしょ？」本気でそう思ってる',
+    statColors: ['#ef4444','#f59e0b','#3b82f6','#22c55e','#ef4444']
+  },
+  { // 丁 (ひのと) - 火の陰
+    kan: '丁', reading: 'ひのと', element: '火', yinyang: '陰',
+    elClass: 'el-fire', emoji: '🕯️',
+    nature: 'ろうそく',
+    uraTitle: '闇を抱えた繊細ヤンデレ',
+    uraDesc: '物静かで知的、でも内面は激情の持ち主。好きな人への執着がヤバい。表面上は穏やかに微笑んでるけど、LINEの既読スルーで世界が終わるタイプ。観察力が鋭すぎて、相手の嘘を瞬時に見抜く。飲み会では静かに飲んでるように見えて、実は全員の関係性をマッピング済み。',
+    stats: { 執着度: 90, 観察力: 96, 嫉妬深さ: 85, 知性: 88, 酔うと: 72 },
+    quote: '「別に怒ってないよ？」←めちゃくちゃ怒ってる',
+    statColors: ['#ef4444','#22c55e','#ef4444','#3b82f6','#f59e0b']
+  },
+  { // 戊 (つちのえ) - 土の陽
+    kan: '戊', reading: 'つちのえ', element: '土', yinyang: '陽',
+    elClass: 'el-earth', emoji: '⛰️',
+    nature: '山岳',
+    uraTitle: '動かない怠惰の王',
+    uraDesc: '包容力があって器が大きい…のは表の顔。裏の本性は究極のめんどくさがり屋。「まあいっか」が人生のモットー。動かないことに関しては山のように頑固。でもその泰然自若っぷりが、なぜか周りに安心感を与えている。飲み会では動かずに人が集まってくるタイプ。座ったまま帝王の風格。',
+    stats: { 怠惰度: 95, 包容力: 88, 頑固度: 82, マイペース: 96, 酔うと: 60 },
+    quote: '「別に動かなくても、必要な人は向こうから来る」これが真理',
+    statColors: ['#ef4444','#22c55e','#f59e0b','#22c55e','#3b82f6']
+  },
+  { // 己 (つちのと) - 土の陰
+    kan: '己', reading: 'つちのと', element: '土', yinyang: '陰',
+    elClass: 'el-earth', emoji: '🌾',
+    nature: '田園',
+    uraTitle: 'お節介すぎる支配者',
+    uraDesc: '優しくて面倒見が良い…を通り越して、実は人をコントロールしたい支配欲の持ち主。「あなたのためを思って」が口癖だけど、半分は自分の思い通りにしたいだけ。でも本当に情が深いのも事実。世話を焼きすぎて相手を窒息させがち。飲み会では頼んでないのに全員分の注文をまとめ始める。',
+    stats: { 支配欲: 82, お節介度: 96, 情の深さ: 92, 心配性: 88, 酔うと: 75 },
+    quote: '「私がいないとダメでしょ？」←本人が一番そう思いたい',
+    statColors: ['#ef4444','#f59e0b','#22c55e','#f59e0b','#3b82f6']
+  },
+  { // 庚 (かのえ) - 金の陽
+    kan: '庚', reading: 'かのえ', element: '金', yinyang: '陽',
+    elClass: 'el-metal', emoji: '⚔️',
+    nature: '鋼鉄',
+    uraTitle: '正論で人を斬る鬼畜',
+    uraDesc: '頭が切れて判断力抜群。でも裏の顔は、正論という名の刀で容赦なく人を斬りつける鬼畜。「事実を言ってるだけ」が殺し文句。空気を読まないんじゃない、読んだ上で無視してる。飲み会では誰かの地雷を正確に踏み抜いて場を凍らせる才能がある。でも仕事はめちゃくちゃできる。',
+    stats: { 毒舌度: 94, 判断力: 96, 共感力: 35, 仕事力: 95, 酔うと: 88 },
+    quote: '「傷つくのは本当のことだから」←それが一番傷つく',
+    statColors: ['#ef4444','#22c55e','#3b82f6','#22c55e','#ef4444']
+  },
+  { // 辛 (かのと) - 金の陰
+    kan: '辛', reading: 'かのと', element: '金', yinyang: '陰',
+    elClass: 'el-metal', emoji: '💎',
+    nature: '宝石',
+    uraTitle: 'プライド高すぎ自滅型',
+    uraDesc: '繊細で美意識が高い…裏を返せば、プライドがエベレスト級。自分からは絶対に頭を下げない。ダサいことが死ぬほど嫌い。完璧主義すぎて、他人の粗が許せない。飲み会では店のセンスにまず文句をつけがち。でもその美学があるから、あなたの周りには本物が集まる。孤高の宝石。',
+    stats: { プライド: 98, 美意識: 94, 孤独耐性: 72, 完璧主義: 90, 酔うと: 68 },
+    quote: '「妥協するくらいなら一人でいい」←でも本当は寂しい',
+    statColors: ['#ef4444','#22c55e','#3b82f6','#f59e0b','#a1a1aa']
+  },
+  { // 壬 (みずのえ) - 水の陽
+    kan: '壬', reading: 'みずのえ', element: '水', yinyang: '陽',
+    elClass: 'el-water', emoji: '🌊',
+    nature: '大海',
+    uraTitle: '自由という名のクズ',
+    uraDesc: '器が大きくて自由奔放…聞こえはいいけど、要するに責任感ゼロ。「束縛されたくない」を免罪符に約束を平気で破る。興味が移り変わりすぎて周りが振り回される。でもその圧倒的なスケール感と冒険心は本物。飲み会では突然「このあとカラオケ→始発で海行こう」と言い出すタイプ。',
+    stats: { 自由度: 98, 無責任度: 85, 冒険心: 92, スケール: 90, 酔うと: 95 },
+    quote: '「人生一度きりだから」←それ言いすぎて信用を失ってる',
+    statColors: ['#3b82f6','#ef4444','#22c55e','#22c55e','#ef4444']
+  },
+  { // 癸 (みずのと) - 水の陰
+    kan: '癸', reading: 'みずのと', element: '水', yinyang: '陰',
+    elClass: 'el-water', emoji: '🌧️',
+    nature: '雨水',
+    uraTitle: '考えすぎ自爆マシーン',
+    uraDesc: '知性的で慈悲深い…けど裏の本性は、考えすぎて動けないネガティブの帝王。まだ起きてないことで勝手に病んでる。「もしかして嫌われた？」が1日10回頭をよぎる。でもその繊細さゆえに、人の痛みに誰よりも寄り添える。飲み会では急に黙って「大丈夫？」と聞かれるやつ。大丈夫じゃない。',
+    stats: { 考えすぎ: 98, 共感力: 95, ネガティブ: 88, 知性: 90, 酔うと: 80 },
+    quote: '「考えすぎだよ」←それが一番考えすぎるやつ',
+    statColors: ['#3b82f6','#22c55e','#ef4444','#3b82f6','#f59e0b']
+  }
+];
+
+const loadingMsgs = [
+  '命式を解読中…',
+  '陰陽五行を分析中…',
+  '天干地支を照合中…',
+  '裏の本性を暴いています…',
+  '覚悟はいいですか…'
+];
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startDivine() {
+  const y = parseInt(document.getElementById('sel-year').value);
+  const m = parseInt(document.getElementById('sel-month').value);
+  const d = parseInt(document.getElementById('sel-day').value);
+
+  // 簡単なバリデーション
+  const maxDay = new Date(y, m, 0).getDate();
+  if (d > maxDay) {
+    alert(`${y}年${m}月は${maxDay}日までです！`);
+    return;
+  }
+
+  showScreen('loading-screen');
+
+  let msgIdx = 0;
+  const msgEl = document.getElementById('loading-msg');
+  const interval = setInterval(() => {
+    msgIdx++;
+    if (msgIdx < loadingMsgs.length) {
+      msgEl.textContent = loadingMsgs[msgIdx];
+    }
+  }, 600);
+
+  setTimeout(() => {
+    clearInterval(interval);
+    const kanIndex = calcDayKan(y, m, d);
+    showResult(kanIndex, y, m, d);
+  }, 3200);
+}
+
+function showResult(kanIndex, y, m, d) {
+  const data = kanData[kanIndex];
+  const card = document.getElementById('result-card');
+
+  // 十二支も計算（年支）
+  const branches = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  const branchIndex = ((y - 4) % 12 + 12) % 12;
+  const yearBranch = branches[branchIndex];
+
+  const statsHTML = Object.entries(data.stats).map(([label, val], i) => {
+    const color = data.statColors[i];
+    const barLabel = label === '酔うと' ? '酔うと暴走' : label;
+    return `
+      <div class="stat-row">
+        <span class="stat-label">${barLabel}</span>
+        <div class="stat-bar-bg">
+          <div class="stat-bar" data-width="${val}" style="background: ${color};"></div>
+        </div>
+        <span class="stat-val">${val}%</span>
+      </div>
+    `;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="result-header">
+      <div class="element-badge ${data.elClass}" style="background: var(--el-bg); color: var(--el-color);">
+        <span class="element-icon">${data.emoji}</span>
+        ${data.element}の${data.yinyang}（${data.nature}）
+      </div>
+      <div class="result-kan" style="color: var(--el-color);">${data.kan}</div>
+      <div class="result-reading">${data.reading}｜${y}年${yearBranch}年生まれ</div>
+    </div>
+    <div class="result-body">
+      <div class="ura-title-label">▼ あなたの裏性格</div>
+      <div class="ura-title">${data.uraTitle}</div>
+      <div class="ura-desc">${data.uraDesc}</div>
+      <div class="stats-section">
+        <div class="stats-title">▼ 裏パラメータ</div>
+        ${statsHTML}
+      </div>
+    </div>
+    <div class="ura-quote">「${data.quote.replace(/^「/, '').replace(/」$/, '')}」</div>
+  `;
+
+  showScreen('result-screen');
+
+  // バーアニメーション
+  setTimeout(() => {
+    card.querySelectorAll('.stat-bar').forEach(bar => {
+      bar.style.width = bar.dataset.width + '%';
+    });
+  }, 100);
+}
+
+function goBack() {
+  showScreen('top-screen');
+}
+</script>
+</body>
+</html>
